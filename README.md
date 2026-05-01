@@ -12,7 +12,6 @@ Dibangun dengan PHP/MySQL sebagai backend dan vanilla JavaScript sebagai fronten
 
 ---
 
-
 ## Fitur
 
 - Login admin dengan autentikasi via `.env`
@@ -49,7 +48,6 @@ UI-D4/
 ├── js/
 │   ├── config.js
 │   ├── utils.js
-│   └── app.js
 │
 └── sql/           (diabaikan Git, hanya untuk setup lokal)
     ├── create_table.sql
@@ -125,21 +123,37 @@ Ubah `USE_BACKEND` menjadi `false` untuk mode testing lokal tanpa database.
 
 ## Struktur Database
 
-Tabel `alumni` memiliki kolom utama:
+Tabel: `alumni` — Engine: InnoDB, Charset: utf8mb4_unicode_ci
 
-| Kolom | Keterangan |
-|---|---|
-| `NIM` | Nomor Induk Mahasiswa (PRIMARY KEY) |
-| `Nama Lulusan` | Nama lengkap alumni |
-| `Fakultas` | Nama fakultas |
-| `Program Studi` | Program studi |
-| `Tanggal Lulus` | Tanggal kelulusan |
-| `Email` | Alamat email |
-| `Nomor HP` | Nomor handphone |
-| `Linkedin` | URL profil LinkedIn |
-| `Tempat Bekerja (Present)` | Tempat kerja saat ini |
-| `_status` | Status validasi data |
-| `_validated_at` | Waktu terakhir divalidasi |
+| Kolom                         | Tipe               | Keterangan                                                            |
+| ----------------------------- | ------------------ | --------------------------------------------------------------------- |
+| `id`                          | INT AUTO_INCREMENT | Primary key internal                                                  |
+| `NIM`                         | VARCHAR(50) UNIQUE | Nomor Induk Mahasiswa                                                 |
+| `Nama Lulusan`                | VARCHAR(255)       | Nama lengkap alumni                                                   |
+| `Fakultas`                    | VARCHAR(255)       | Nama fakultas                                                         |
+| `Program Studi`               | VARCHAR(255)       | Program studi                                                         |
+| `Tanggal Lulus`               | VARCHAR(100)       | Tanggal kelulusan                                                     |
+| `Tahun Masuk`                 | VARCHAR(10)        | Tahun masuk kuliah                                                    |
+| `Nomor HP`                    | VARCHAR(100)       | Nomor handphone                                                       |
+| `Email`                       | VARCHAR(255)       | Alamat email                                                          |
+| `Alamat Bekerja`              | VARCHAR(500)       | Kota/alamat tempat bekerja                                            |
+| `Tempat Bekerja (Present)`    | VARCHAR(500)       | Nama perusahaan saat ini                                              |
+| `Posisi Jabatan (Present)`    | VARCHAR(255)       | Jabatan saat ini                                                      |
+| `Status Pekerjaan (Present)`  | VARCHAR(100)       | Jenis pekerjaan saat ini                                              |
+| `Sosmed Kantor (Present)`     | VARCHAR(500)       | LinkedIn perusahaan saat ini                                          |
+| `Tempat Bekerja (Terakhir)`   | VARCHAR(500)       | Nama perusahaan terakhir                                              |
+| `Posisi Jabatan (Terakhir)`   | VARCHAR(255)       | Jabatan terakhir                                                      |
+| `Status Pekerjaan (Terakhir)` | VARCHAR(100)       | Jenis pekerjaan terakhir                                              |
+| `Sosmed Kantor (Terakhir)`    | VARCHAR(500)       | LinkedIn perusahaan terakhir                                          |
+| `Linkedin`                    | VARCHAR(500)       | URL profil LinkedIn alumni                                            |
+| `Instagram`                   | VARCHAR(255)       | Username Instagram                                                    |
+| `TikTok`                      | VARCHAR(255)       | Username TikTok                                                       |
+| `Facebook`                    | VARCHAR(255)       | Username Facebook                                                     |
+| `_status`                     | VARCHAR(50)        | Status validasi (`Tervalidasi` / `Perlu Divalidasi` / `Data Abu-Abu`) |
+| `_validated_at`               | DATETIME NULL      | Waktu terakhir divalidasi                                             |
+| `created_at`                  | TIMESTAMP          | Waktu data dimasukkan ke sistem                                       |
+
+Index yang dibuat: `idx_nim`, `idx_status`, `idx_nama`, `idx_fakultas`.
 
 ---
 
@@ -154,12 +168,12 @@ Tabel `alumni` memiliki kolom utama:
 
 ## Teknologi
 
-| Bagian | Teknologi |
-|---|---|
-| Frontend | HTML, Vanilla JavaScript, Tailwind CSS (CDN) |
-| Styling tambahan | Vanilla CSS (`css/styles.css`) |
-| Backend | PHP 8+ |
-| Database | MySQL / MariaDB |
-| Library JS | PapaParse (CSV), SheetJS (XLSX) |
-| Icon | Font Awesome 6 |
-| Font | Inter, Playfair Display (Google Fonts) |
+| Bagian           | Teknologi                                    |
+| ---------------- | -------------------------------------------- |
+| Frontend         | HTML, Vanilla JavaScript, Tailwind CSS (CDN) |
+| Styling tambahan | Vanilla CSS (`css/styles.css`)               |
+| Backend          | PHP 8+                                       |
+| Database         | MySQL / MariaDB                              |
+| Library JS       | PapaParse (CSV), SheetJS (XLSX)              |
+| Icon             | Font Awesome 6                               |
+| Font             | Inter, Playfair Display (Google Fonts)       |
