@@ -1,0 +1,587 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlumniQ - Dasbor Pelacakan Alumni</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#fff7ed', 100: '#ffedd5', 400: '#d6a77a', 500: '#c08457', 600: '#b57a53', 900: '#7a3e22' },
+                        dark: { bg: '#f5f7fb', card: '#ffffff', border: '#eaeef2' }
+                    },
+                    animation: { 'fade-in': 'fadeIn 0.5s ease-out', 'slide-up': 'slideUp 0.5s ease-out' },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body { font-family: "Inter", sans-serif; background: #f5f7fb; }
+        .alumniq-underline { display: inline-flex; flex-direction: column; align-items: center; font-family: "Playfair Display", serif; font-size: 1.25rem; font-weight: 700; color: #fefcbf; }
+        .creative-q { display: inline-block; position: relative; color: #c08457; font-size: 1.45rem; transform: rotate(3deg) translateY(-1px); margin-left: -2px; text-shadow: 0 2px 5px rgba(192,132,87,0.22); }
+        .creative-q::after { content: ""; position: absolute; bottom: -2px; right: -7px; width: 12px; height: 12px; border-right: 2px solid #c08457; border-bottom: 2px solid #c08457; border-radius: 0 0 12px 0; transform: rotate(-5deg); opacity: 0.9; }
+        .creative-q::before { content: "â€¢"; position: absolute; top: -6px; right: -4px; font-size: 0.9rem; color: #d4af37; text-shadow: 0 0 8px rgba(241,196,15,0.6); line-height: 1; }
+        .premium-bg { background: linear-gradient(145deg, #d6a77a, #c08457); }
+        .premium-card { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 20px 35px -10px rgba(0,0,0,0.08), 0 5px 15px -5px rgba(0,0,0,0.04); transition: all 0.25s ease; }
+        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 20px 35px -10px rgba(0,0,0,0.10), 0 5px 15px -5px rgba(0,0,0,0.05); }
+        .glass-modal { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(234,238,242,0.9); box-shadow: 0 30px 60px -20px rgba(0,0,0,0.18); }
+        .premium-input { border: 1.5px solid #e9edf2; border-radius: 9999px; padding: 0.75rem 1.25rem; font-size: 0.95rem; background-color: #ffffff; transition: all 0.2s; }
+        .premium-input:focus { border-color: #c08457; box-shadow: 0 0 0 4px rgba(192,132,87,0.16); outline: none; }
+        .gradient-text { background: linear-gradient(145deg, #d6a77a, #c08457); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
+        .table-modern th { font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; color: #6b7280; background-color: #fafbfc; border-bottom: 2px solid #eaeef2; }
+        .table-modern td { padding: 1rem 1.5rem; vertical-align: middle; border-bottom: 1px solid #edf2f7; }
+        .table-modern tbody tr:hover { background-color: #fefaf6; }
+        th { position: sticky; top: 0; z-index: 10; background-color: rgba(250, 251, 252, 0.95) !important; backdrop-filter: blur(8px); }
+
+        .status-tab { position: relative; }
+        .status-tab::after {
+            content: "";
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            bottom: -1px;
+            height: 2px;
+            background: rgba(192, 132, 87, 0.0);
+            border-radius: 999px;
+            transform: scaleX(0.65);
+            transition: transform 180ms ease, background-color 180ms ease, opacity 180ms ease;
+            opacity: 0;
+        }
+        .status-tab:hover::after {
+            opacity: 1;
+            background: rgba(192, 132, 87, 0.45);
+            transform: scaleX(1);
+        }
+        .status-tab.is-active::after {
+            opacity: 1;
+            background: rgba(192, 132, 87, 1);
+            transform: scaleX(1);
+        }
+
+        #pageScroll { overflow-anchor: none; }
+
+        .modal-grid { align-items: stretch; }
+        .modal-grid > * { height: 100%; }
+    </style>
+</head>
+<body class="bg-dark-bg text-slate-800 font-sans antialiased overflow-hidden h-screen flex flex-col">
+
+    <div id="loginOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-dark-bg transition-opacity duration-500">
+        <div class="glass-modal p-8 rounded-2xl w-full max-w-md transform transition-transform duration-500 animate-slide-up">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full premium-bg mb-4 shadow-lg" style="box-shadow:0 18px 35px -18px rgba(192,132,87,0.55);">
+                    <i class="fa-solid fa-graduation-cap text-2xl text-white"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Alumni<span class="gradient-text">Q</span></h1>
+                <p class="text-slate-500 mt-2 text-sm">Masuk untuk melihat data pelacakan alumni</p>
+            </div>
+            <form id="loginForm" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Username</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-user text-slate-500"></i>
+                        </div>
+                        <input id="usernameInput" name="username" type="text" placeholder="Masukkan username" required autocomplete="username" class="block w-full pl-10 pr-3 premium-input text-slate-800">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Password</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-lock text-slate-500"></i>
+                        </div>
+                        <input id="passwordInput" name="password" type="password" placeholder="Masukkan password" required autocomplete="current-password" class="block w-full pl-10 pr-10 premium-input text-slate-800">
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors" tabindex="-1" aria-label="Tampilkan password">
+                            <i id="togglePasswordIcon" class="fa-solid fa-eye text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+                <p id="loginError" class="hidden text-xs text-red-600 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">
+                    Username atau password salah.
+                </p>
+                <button type="submit" class="w-full mt-2 py-3 rounded-2xl text-white font-semibold premium-bg transition hover:opacity-90">
+                    Sistem Login
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('togglePassword')?.addEventListener('click', function () {
+            const input = document.getElementById('passwordInput');
+            const icon  = document.getElementById('togglePasswordIcon');
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            icon.classList.toggle('fa-eye',      !isHidden);
+            icon.classList.toggle('fa-eye-slash', isHidden);
+        });
+    </script>
+
+    <div id="mainContent" class="flex flex-col h-full opacity-0 transition-opacity duration-700 bg-dark-bg">
+
+        <nav class="bg-slate-900/90 backdrop-blur-xl text-white sticky top-0 z-50 border-b border-slate-700/30 shadow-2xl flex-shrink-0">
+            <div class="max-w-[1600px] mx-auto px-6 sm:px-10 lg:px-14">
+                <div class="flex justify-between h-16 items-center">
+                    <div class="flex items-center">
+                        <div class="alumniq-underline text-xl scale-75 transform origin-left">
+                            <span>Alumni<span class="creative-q">q</span></span>
+                        </div>
+                        <span class="ml-4 text-xs font-semibold text-slate-400 tracking-wider uppercase border-l border-slate-700 pl-4 py-1">Admin Panel</span>
+                    </div>
+                    <button id="logoutBtn" class="text-sm font-semibold text-red-400 hover:text-red-300 transition px-3 py-1.5 rounded-lg hover:bg-red-950/30">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div id="pageScroll" class="flex-1 overflow-y-auto custom-scrollbar max-w-[1600px] mx-auto px-6 sm:px-10 lg:px-14 py-8 w-full">
+
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                <div class="w-full">
+                    <h1 class="text-4xl font-bold text-slate-900 tracking-tight">Database Alumni</h1>
+                    <p class="text-sm text-slate-500 mt-1">Total profil alumni yang tersimpan di sistem: <span id="statTotal" class="font-semibold text-slate-700">0</span></p>
+                </div>
+
+                <div id="searchForm" class="flex w-full md:w-auto relative">
+                    <input type="text" id="searchInput" placeholder="Cari nama alumni..." class="premium-input w-full md:w-[520px] pl-12 pr-28 py-3" />
+                    <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <button id="searchBtn" type="button" class="absolute right-2 top-2 bottom-2 px-8 rounded-full premium-bg text-white font-semibold text-sm hover:opacity-90 transition shadow-md">Cari</button>
+                    <button id="clearSearchBtn" type="button" class="hidden absolute right-[108px] top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-slate-700">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <section id="view-stats" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+                <div class="premium-card rounded-2xl p-5 border border-emerald-200 bg-emerald-50/60">
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600">Terverifikasi</p>
+                    <p id="statValid" class="mt-3 text-3xl font-bold text-emerald-700">0</p>
+                    <p class="mt-1 text-sm text-emerald-700/80">Profil dengan data yang sudah Valid.</p>
+                </div>
+                <div class="premium-card rounded-2xl p-5 border border-amber-200 bg-amber-50/70">
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-600">Perlu Diverifikasi</p>
+                    <p id="statNeedValidation" class="mt-3 text-3xl font-bold text-amber-700">0</p>
+                    <p class="mt-1 text-sm text-amber-700/80">Masih menunggu pengecekan akhir operator.</p>
+                </div>
+                <div class="premium-card rounded-2xl p-5 border border-slate-300 bg-slate-100/80">
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">Data Masih Samar</p>
+                    <p id="statProcessing" class="mt-3 text-3xl font-bold text-slate-800">0</p>
+                    <p class="mt-1 text-sm text-slate-600/90">Data Ditemukan Tapi Masih Samar</p>
+                </div>
+                <div class="premium-card rounded-2xl p-5 border border-slate-200">
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tidak Ditemukan</p>
+                    <p id="statNotFound" class="mt-3 text-3xl font-bold text-slate-700">0</p>
+                    <p class="mt-1 text-sm text-slate-500">Profil yang ditandai tidak ditemukan.</p>
+                </div>
+            </section>
+
+            <section class="premium-card rounded-2xl border border-slate-200 p-6 mb-6">
+                <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Ringkasan Status Alumni</h2>
+                        <p class="text-sm text-slate-500">Perbandingan distribusi status pada keseluruhan data alumni.</p>
+                    </div>
+                    <div class="text-sm text-slate-500">
+                        Total profil: <span id="summaryTotal" class="font-semibold text-slate-700">0</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between text-sm mb-2">
+                            <span class="font-medium text-slate-700">Terverifikasi</span>
+                            <span id="summaryValidatedValue" class="text-emerald-700 font-semibold">0 (0%)</span>
+                        </div>
+                        <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
+                            <div id="summaryValidatedBar" class="h-full rounded-full bg-emerald-500 transition-all duration-500" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between text-sm mb-2">
+                            <span class="font-medium text-slate-700">Perlu Diverifikasi</span>
+                            <span id="summaryNeedValue" class="text-amber-700 font-semibold">0 (0%)</span>
+                        </div>
+                        <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
+                            <div id="summaryNeedBar" class="h-full rounded-full bg-amber-500 transition-all duration-500" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between text-sm mb-2">
+                            <span class="font-medium text-slate-700">Data Masih Samar</span>
+                            <span id="summaryProcessingValue" class="text-slate-700 font-semibold">0 (0%)</span>
+                        </div>
+                        <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
+                            <div id="summaryProcessingBar" class="h-full rounded-full bg-slate-500 transition-all duration-500" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between text-sm mb-2">
+                            <span class="font-medium text-slate-700">Tidak Ditemukan</span>
+                            <span id="summaryNotFoundValue" class="text-slate-700 font-semibold">0 (0%)</span>
+                        </div>
+                        <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
+                            <div id="summaryNotFoundBar" class="h-full rounded-full bg-slate-400 transition-all duration-500" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div id="view-table" class="glass rounded-2xl border border-dark-border shadow-xl overflow-hidden flex flex-col">
+                <div class="p-5 border-b border-dark-border bg-[rgba(250,251,252,0.85)]">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">Daftar Alumni</h3>
+                            <p class="text-sm text-slate-600">Data dari file Excel dan CSV</p>
+                        </div>
+                        <div class="flex items-center gap-4 w-full sm:w-auto">
+                            <div id="searchResultInfo" class="hidden text-xs text-[color:#c08457] bg-[rgba(192,132,87,0.08)] px-3 py-2 rounded-xl border border-[rgba(192,132,87,0.2)] flex items-center gap-2 flex-shrink-0">
+                                <i class="fa-solid fa-database"></i>
+                                <span id="searchResultText" class="font-semibold">0 data ditemukan</span>
+                            </div>
+
+                            <div class="flex overflow-x-auto whitespace-nowrap border-b border-slate-200 w-full sm:w-auto" id="statusTabs" aria-label="Filter Status">
+                                <button type="button" class="status-tab px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-colors" data-status="">
+                                    Semua Data
+                                </button>
+                                <button type="button" class="status-tab px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-colors" data-status="Tervalidasi">
+                                    Terverifikasi
+                                </button>
+                                <button type="button" class="status-tab px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-colors" data-status="Perlu Divalidasi">
+                                    Perlu Diverifikasi
+                                </button>
+                                <button type="button" class="status-tab px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-colors" data-status="Data Abu-Abu">
+                                    Data Masih Samar
+                                </button>
+                                <button type="button" class="status-tab px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-colors" data-status="Tidak Ditemukan">
+                                    Belum / Gagal Ditemukan
+                                </button>
+                            </div>
+                        </div>
+
+                        <select id="statusFilter" class="hidden">
+                            <option value="">Semua Status</option>
+                            <option value="Tervalidasi" selected>Terverifikasi</option>
+                            <option value="Perlu Divalidasi">Perlu Diverifikasi</option>
+                            <option value="Data Abu-Abu">Data Masih Samar</option>
+                            <option value="Tidak Ditemukan">Belum / Gagal Ditemukan</option>
+                        </select>
+                    </div>
+                    <div id="dataLoader" class="flex items-center text-[color:#c08457] bg-[rgba(192,132,87,0.08)] px-3 py-1.5 rounded-lg border border-[rgba(192,132,87,0.2)] w-fit">
+                        <i class="fa-solid fa-circle-notch fa-spin mr-2"></i>
+                        <span class="text-sm font-medium" id="loaderText">Memuat data...</span>
+                    </div>
+                    
+                    <div id="fileInputContainer" class="hidden flex flex-col gap-4 mt-4 p-4 bg-white rounded-2xl border border-slate-200">
+                        <p class="text-sm text-slate-600">File tidak ditemukan secara otomatis. Silakan upload file secara manual:</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">File Excel</label>
+                                <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="w-full text-xs text-slate-600 file:mr-2 file:px-3 file:py-1.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-600 file:text-white hover:file:bg-brand-500 cursor-pointer">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">File CSV</label>
+                                <input type="file" id="csvFileInput" accept=".csv" class="w-full text-xs text-slate-600 file:mr-2 file:px-3 file:py-1.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-500 cursor-pointer">
+                            </div>
+                        </div>
+                        <button id="processFilesBtn" class="px-4 py-2 premium-bg text-white text-sm font-semibold rounded-xl transition hover:opacity-90">
+                            <i class="fa-solid fa-upload mr-2"></i>Upload & Proses
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-sm text-slate-700 table-modern">
+                        <thead class="text-xs uppercase">
+                            <tr>
+                                <th class="px-6 py-4 font-medium">Nama Lulusan</th>
+                                <th class="px-6 py-4 font-medium">NIM</th>
+                                <th class="px-6 py-4 font-medium">Fakultas / Prodi</th>
+                                <th class="px-6 py-4 font-medium">Tahun Lulus</th>
+                                <th class="px-6 py-4 font-medium">Status</th>
+                                <th class="px-6 py-4 font-medium text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-dark-border"></tbody>
+                    </table>
+                </div>
+
+                <div class="p-4 border-t border-dark-border bg-dark-card/30 flex flex-col sm:flex-row justify-between items-center gap-4" style="background:rgba(250,251,252,0.8);">
+                    <div class="text-xs text-slate-600">
+                        Menampilkan <span class="font-bold text-slate-900" id="pageInfo">0-0 dari 0</span> data
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="btnPrevPage" class="p-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 disabled:opacity-50">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <div class="px-4 py-1.5 rounded-xl bg-white text-sm font-semibold text-slate-800 border border-slate-200">
+                            Hal. <span id="currentPageNum">1</span> / <span id="totalPagesNum">1</span>
+                        </div>
+                        <button id="btnNextPage" class="p-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 disabled:opacity-50">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="detailModal" class="fixed inset-0 z-[60] hidden opacity-0 transition-opacity duration-300 bg-black/40 backdrop-blur-sm p-4 flex items-center justify-center">
+        <div id="detailModalContent" class="glass-modal rounded-3xl w-full max-w-5xl border border-slate-200 flex flex-col max-h-[92vh] transform scale-95 transition-transform overflow-hidden">
+
+            <div class="relative flex-shrink-0">
+                <div class="absolute inset-0 bg-gradient-to-r from-[rgba(214,167,122,0.35)] via-[rgba(255,255,255,0.85)] to-[rgba(214,167,122,0.22)]"></div>
+                <div class="relative p-6 md:p-7 flex items-start justify-between gap-4 border-b border-slate-200">
+                    <div class="flex items-center gap-4 min-w-0">
+                        <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center flex-shrink-0">
+                            <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-[rgba(192,132,87,0.14)] border border-[rgba(192,132,87,0.24)] flex items-center justify-center">
+                                <i class="fa-solid fa-user-graduate text-[color:#c08457] text-lg md:text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="min-w-0">
+                            <h3 id="modalNama" class="text-xl md:text-2xl font-bold text-slate-900 tracking-tight truncate">Nama Alumni</h3>
+                            <p id="modalNIM" class="text-sm text-slate-600 mt-0.5">NIM: 000000</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <span id="modalStatusBadge" class="hidden px-3 py-1.5 rounded-full text-xs font-semibold border bg-white/70 text-slate-700">
+                            Status
+                        </span>
+                        <button id="closeModalBtn" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-white/70 border border-transparent hover:border-slate-200 transition">
+                            <i class="fa-solid fa-xmark text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-grid grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 md:p-7 overflow-y-auto flex-1 custom-scrollbar items-stretch">
+
+                <aside class="contents">
+                    <div class="premium-card rounded-2xl p-5 border border-slate-200 order-1 h-full flex flex-col">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-4">Ringkasan</p>
+                        <div class="grid grid-cols-2 gap-3 flex-1 content-start">
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Tahun Masuk</p>
+                                <p id="m-tahun-masuk" class="text-sm font-semibold text-slate-900">-</p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Tanggal Lulus</p>
+                                <p id="m-tanggal-lulus" class="text-sm font-semibold text-slate-900">-</p>
+                            </div>
+                            <div class="col-span-2 rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Fakultas</p>
+                                <p id="m-fakultas" class="text-sm font-semibold text-slate-900">-</p>
+                            </div>
+                            <div class="col-span-2 rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Program Studi</p>
+                                <p id="m-prodi" class="text-sm font-semibold text-slate-900">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="premium-card rounded-2xl p-5 border border-slate-200 order-3 h-full flex flex-col">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-4">Kontak</p>
+                        <div class="space-y-3 flex-1">
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Email</p>
+                                <p id="m-email" class="text-sm font-semibold text-slate-900 break-all">-</p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Nomor HP</p>
+                                <p id="m-hp" class="text-sm font-semibold text-slate-900">-</p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Alamat Bekerja</p>
+                                <p id="m-alamat" class="text-sm font-semibold text-slate-900">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <section class="contents">
+                    <div class="premium-card rounded-2xl p-5 border border-slate-200 order-2 h-full flex flex-col">
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-9 h-9 rounded-xl bg-[rgba(192,132,87,0.10)] border border-[rgba(192,132,87,0.20)] flex items-center justify-center text-[color:#c08457]">
+                                    <i class="fa-solid fa-briefcase"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-bold text-slate-900 truncate">Pekerjaan (Sekarang)</p>
+                                    <p class="text-xs text-slate-500">Informasi pekerjaan saat ini</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 content-start">
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Tempat Bekerja</p>
+                                <p id="m-tempat-present" class="text-sm font-semibold text-slate-900">-</p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Posisi Jabatan</p>
+                                <p id="m-posisi-present" class="text-sm font-semibold text-slate-900">-</p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Status Pekerjaan</p>
+                                <p id="m-status-present" class="text-sm font-semibold text-slate-900">-</p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Sosmed Kantor</p>
+                                <a id="m-sosmed-present" href="#" target="_blank" class="text-xs text-blue-600 hover:text-blue-700 break-all">-</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="premium-card rounded-2xl p-5 border border-slate-200 order-4 h-full flex flex-col">
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-9 h-9 rounded-xl bg-[rgba(192,132,87,0.10)] border border-[rgba(192,132,87,0.20)] flex items-center justify-center text-[color:#c08457]">
+                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-bold text-slate-900 truncate">Pekerjaan (Terakhir)</p>
+                                    <p class="text-xs text-slate-500">Riwayat pekerjaan terakhir</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 content-start">
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Tempat Bekerja</p>
+                                <p id="m-tempat-terakhir" class="text-sm font-semibold text-slate-900">-</p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Posisi Jabatan</p>
+                                <p id="m-posisi-terakhir" class="text-sm font-semibold text-slate-900">-</p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Status Pekerjaan</p>
+                                <p id="m-status-terakhir" class="text-sm font-semibold text-slate-900">-</p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p class="text-[11px] text-slate-500 mb-1">Sosmed Kantor</p>
+                                <a id="m-sosmed-terakhir" href="#" target="_blank" class="text-xs text-blue-600 hover:text-blue-700 break-all">-</a>
+                            </div>
+                        </div>
+                    </div>
+
+                </section>
+
+                <section class="premium-card rounded-2xl p-5 border border-slate-200 order-5 lg:col-span-2 min-h-[260px]">
+                    <div class="flex items-center justify-between gap-3 mb-4">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-[rgba(192,132,87,0.10)] border border-[rgba(192,132,87,0.20)] flex items-center justify-center text-[color:#c08457]">
+                                <i class="fa-solid fa-share-nodes"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-slate-900 truncate">Alamat Sosial Media</p>
+                                <p class="text-xs text-slate-500">Tautan Sosial Media yang ditemukan</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 items-stretch">
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 transition-colors">
+                            <div class="flex items-center gap-2 text-[#0A66C2]">
+                                <i class="fa-brands fa-linkedin text-lg"></i>
+                                <span class="text-xs font-semibold">LinkedIn</span>
+                            </div>
+                            <a id="m-linkedin" href="#" target="_blank" class="mt-2 block text-[11px] text-blue-600 hover:text-blue-700 break-all line-clamp-2">-</a>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                            <div class="flex items-center gap-2 text-pink-500">
+                                <i class="fa-brands fa-instagram text-lg"></i>
+                                <span class="text-xs font-semibold">Instagram</span>
+                            </div>
+                            <p id="m-instagram" class="mt-2 text-[11px] text-slate-500 truncate">-</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                            <div class="flex items-center gap-2 text-slate-800">
+                                <i class="fa-brands fa-tiktok text-lg"></i>
+                                <span class="text-xs font-semibold">TikTok</span>
+                            </div>
+                            <p id="m-tiktok" class="mt-2 text-[11px] text-slate-500 truncate">-</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                            <div class="flex items-center gap-2 text-[#1877F2]">
+                                <i class="fa-brands fa-facebook text-lg"></i>
+                                <span class="text-xs font-semibold">Facebook</span>
+                            </div>
+                            <p id="m-facebook" class="mt-2 text-[11px] text-slate-500 truncate">-</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="p-4 md:p-5 border-t border-slate-200 bg-[rgba(250,251,252,0.85)] flex justify-between items-center gap-3 flex-shrink-0">
+                <button id="validateBtn" class="hidden px-5 py-2.5 text-white text-sm font-semibold rounded-xl transition-all flex items-center gap-2" style="background:#c08457; box-shadow:0 4px 14px -4px rgba(192,132,87,0.45);">
+                    <i class="fa-solid fa-circle-check"></i>
+                    Tandai Data Terverifikasi
+                </button>
+                <div id="validateBtnPlaceholder"></div>
+                <button id="closeModalBtnFooter" class="px-6 py-2.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="validateModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div id="validateModalContent" class="glass-modal w-full max-w-sm mx-4 rounded-2xl border border-slate-200 transform transition-all scale-95 opacity-0 duration-200">
+            <div class="p-5 border-b border-slate-200 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background:rgba(192,132,87,0.12); border:1px solid rgba(192,132,87,0.25);">
+                    <i class="fa-solid fa-circle-check" style="color:#c08457;"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-900">Konfirmasi Tindakan</h3>
+                    <p class="text-xs text-slate-500">Perubahan status tidak dapat dibatalkan</p>
+                </div>
+            </div>
+            <div class="p-5">
+                <p class="text-sm text-slate-700 leading-relaxed">Apakah anda yakin ingin memindahkan data ini ke <span class="font-semibold" style="color:#c08457;">Data Terverifikasi</span>?</p>
+                <p id="validateError" class="hidden mt-3 text-xs text-red-600 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg">
+                    <i class="fa-solid fa-circle-exclamation mr-1"></i>Gagal memvalidasi. Coba lagi.
+                </p>
+            </div>
+            <div class="p-4 border-t border-slate-200 flex justify-end gap-3 bg-[rgba(250,251,252,0.85)] rounded-b-2xl">
+                <button id="validateCancelBtn" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 transition-colors">
+                    Batal
+                </button>
+                <button id="validateConfirmBtn" class="px-5 py-2 text-sm font-semibold text-white rounded-xl transition-all flex items-center gap-2" style="background:#c08457;">
+                    <i class="fa-solid fa-circle-check"></i>Konfirmasi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Blokir akses langsung ke file sensitif dari browser
+<Files ".env">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+<Files "db.php">
+    Order Allow,Deny
+    Deny from all
+</Files>

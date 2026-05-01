@@ -1,0 +1,9 @@
+.env
+data.csv
+sql/
+.DS_Store
+Thumbs.db
+.vscode/
+js/app.js
+AGENTS.md
+RTK.md
